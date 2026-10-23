@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which ball is closer?</title>
+<style>
+  :root { color-scheme: light; }
+  body { font: 17px/1.55 system-ui, -apple-system, sans-serif; margin: 0; color: #1d1d1f; background: #f5f5f4; }
+  main { max-width: 600px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 1.5rem; margin: 0.4em 0; } h2 { font-size: 1.2rem; }
+  button { font: inherit; font-size: 1.05rem; padding: 12px 22px; border-radius: 10px; border: 1px solid #bbb; background: #fff; cursor: pointer; }
+  button.primary { background: #1d1d1f; color: #fff; border-color: #1d1d1f; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  #task { text-align: center; }
+  #bar { height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  #progress { height: 100%; width: 0; background: #1d1d1f; transition: width 0.3s; }
+  #stimulus { width: min(92vw, 520px); aspect-ratio: 1; display: block; margin: 0 auto; background: #ddd; border-radius: 6px; }
+  .answers { display: flex; gap: 12px; justify-content: center; margin-top: 14px; }
+  .answers button { flex: 1; max-width: 220px; padding: 18px 0; font-size: 1.15rem; }
+  #feedback { font-weight: 600; margin-top: 10px; min-height: 1.5em; }
+  label { display: block; margin: 10px 0; }
+  .small { font-size: 0.9rem; color: #555; }
+</style>
+<main>
+  <section id="consent">
+    <h1>Which ball is closer? A short study on depth perception</h1>
+    <p>This study compares how people and AI vision systems judge which of two objects is closer.
+      You'll see pictures of two balls and choose the one that looks closer to you. It takes about
+      <b>5–6 minutes</b>, on a phone or a laptop.</p>
+    <ul>
+      <li><b>Anonymous.</b> No name, email or account. You get a random code; nothing links it to you.</li>
+      <li><b>What's recorded:</b> your answers, how long each took, your screen size, and your answers
+        to two screening questions (that you're 18 or over, and whether you have normal or corrected
+        vision).</li>
+      <li><b>Voluntary.</b> You can stop at any time by closing the page. Nothing is sent unless you
+        reach the end.</li>
+      <li><b>Use:</b> combined, anonymous results may be published in a research paper, and the
+        anonymous data may be shared with other researchers.</li>
+      <li>There are no known risks beyond ordinary screen use. Take a break whenever you like.</li>
+    </ul>
+    <p class="small">Researcher: Kunal Shukla, B.Tech CSE (Data Science), SRM Institute of Science
+      and Technology, Kattankulathur (ks6081@srmist.edu.in). Faculty guide: Dr. Archana K S
+      (archanak1@srmist.edu.in).</p>
+    <p>Do you agree to take part?</p>
+    <div class="row">
+      <button class="primary" id="consent-yes">I agree, start</button>
+      <button id="consent-no">No thanks</button>
+    </div>
+  </section>
+
+  <section id="screening" hidden>
+    <h2>Two quick questions</h2>
+    <form id="screening-form">
+      <label><input type="checkbox" name="adult" value="yes" required> I am 18 or older</label>
+      <p>Your eyesight (with glasses or contacts if you use them):</p>
+      <label><input type="radio" name="vision" value="normal" required> Normal or corrected to normal</label>
+      <label><input type="radio" name="vision" value="impaired"> Some uncorrected difficulty</label>
+      <label><input type="radio" name="vision" value="unsaid"> Prefer not to say</label>
+      <div class="row"><button class="primary" type="submit">Continue</button></div>
+    </form>
+  </section>
+
+  <section id="intro" hidden>
+    <h2>Which ball is closer to you?</h2>
+    <p id="intro-text"></p>
+    <p class="small">Answer with the ← and → keys, or tap the buttons under the picture.</p>
+    <div class="row"><button class="primary" id="intro-go">Start</button></div>
+  </section>
+
+  <section id="task" hidden>
+    <div id="bar"><div id="progress"></div></div>
+    <img id="stimulus" alt="Two balls on a grid">
+    <div class="answers">
+      <button id="left">← Left</button>
+      <button id="right">Right →</button>
+    </div>
+    <div id="feedback" hidden></div>
+  </section>
+
+  <section id="end" hidden>
+    <h1>Thank you!</h1>
+    <p id="submit-status"></p>
+    <p><a id="download">Download your answers (a small file)</a></p>
+    <div class="row"><button class="primary" id="next-person">Start again for the next person</button></div>
+    <p class="small">The study asks which ball is closer when depth hints such as size, height in the
+      picture, shadows, texture and haze agree or disagree, and whether people and AI models weigh
+      those hints the same way.</p>
+  </section>
+
+  <section id="declined" hidden>
+    <h2>No problem</h2>
+    <p>Nothing was recorded.</p>
+    <div class="row"><button id="declined-next">Start again for the next person</button></div>
+  </section>
+
+  <section id="full" hidden>
+    <h2>The study is full</h2>
+    <p>Thank you for your interest. The study has reached the number of people it can include, so
+      nothing more is needed.</p>
+  </section>
+</main>
+<script>
+  // Online collection (deploy/supabase.sql, Δ26). The anon key is public by design: it can only
+  // insert a session and ask whether the study is open. Empty submitUrl = save to this computer.
+  window.STUDY = {
+    submitUrl: "https://fgtsfcnssvtvbqryhocf.supabase.co/rest/v1/vlmpsy_sessions",
+    openUrl: "https://fgtsfcnssvtvbqryhocf.supabase.co/rest/v1/rpc/study_open",
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZndHNmY25zc3Z0dmJxcnlob2NmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NDc0NDEsImV4cCI6MjEwODMyMzQ0MX0.zXZPOF8Ne_oKyhqy58INz71egec_1D8AzdqszQcpdWM",
+    version: "v4-2026-10-23-online",
+  };
+</script>
+<script type="module" src="dist/game.js"></script>
+</html>
